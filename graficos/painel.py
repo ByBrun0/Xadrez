@@ -8,8 +8,9 @@ from .tabuleiro import fonte
 
 
 def dimensoes(largura):
+    """A cena ocupa toda a janela. O painel se sobrepõe à margem direita."""
     painel=min(PAINEL_LARGURA,max(210,int(largura*0.27)))
-    return max(1,largura-painel),painel
+    return largura,painel
 
 
 class Painel:
@@ -17,6 +18,25 @@ class Painel:
         self.chave=None
         self.imagem=None
         self.botoes=[]
+        self.abertura = 1.0
+        self.ausencia = 0.0
+
+    def limites(self, largura):
+        _, painel = dimensoes(largura)
+        aba = painel * 24 / 276
+        visivel = aba + (painel - aba) * self.abertura
+        return largura - visivel, painel
+
+    def atualizar(self, dt, cursor, largura, altura, manter_aberto=False):
+        esquerda, _ = self.limites(largura)
+        sobre_menu = esquerda <= cursor[0] <= largura and 0 <= cursor[1] <= altura
+        if sobre_menu or manter_aberto:
+            self.ausencia = 0
+        else:
+            self.ausencia += dt
+        alvo = 1.0 if sobre_menu or manter_aberto or self.ausencia < 1.0 else 0.0
+        passo = min(abs(alvo - self.abertura), dt * 5)
+        self.abertura += passo if alvo > self.abertura else -passo
 
     def gerar(self,interface):
         s=interface.sessao
@@ -24,7 +44,7 @@ class Painel:
         chave=(s.lado,p.posicao,p.resultado,p.oferta,s.aviso,bool(s.virada),
                bool(s.animacao),s.passos,tuple(s.promocao),s.reivindicacao,
                interface.confirmacao,interface.ajuda,interface.giro_automatico,
-               interface.qualidade,interface.metricas,bool(interface.camera.restante))
+               interface.qualidade,interface.metricas,bool(interface.camera.restante),interface.mapa)
         if chave==self.chave:
             return None
         self.chave=chave
@@ -34,6 +54,9 @@ class Painel:
         ouro=(201,163,96)
         suave=(158,176,157)
         d.rectangle((0,0,3,800),fill=ouro)
+        aba = Image.new("RGB", (90, 18), (29, 39, 35))
+        ImageDraw.Draw(aba).text((6, 0), "≡ MENU", font=fonte(12), fill=ouro)
+        imagem.paste(aba.rotate(90, expand=True), (4, 350))
         d.text((24,26),"PRAÇA",font=fonte(31),fill=creme)
         d.text((25,66),"DOS DOIS JOGOS",font=fonte(15),fill=ouro)
         d.line((24,102,252,102),fill=(73,88,72))
@@ -75,6 +98,7 @@ class Painel:
                 ("camera","Restaurar câmera",not ocupado),
                 ("giro","Giro por turno   "+("ligado" if interface.giro_automatico else "desligado"),not ocupado),
                 ("qualidade","Qualidade   "+interface.qualidade,not ocupado),
+                ("mapa","Mapa   "+("Dia" if interface.mapa=="dia" else "Noite"),not ocupado),
                 ("novo","Nova partida",livre),
                 ("empate","Aceitar empate" if p.oferta==-p.posicao.turno else "Oferecer empate",
                  livre and not p.resultado),
@@ -83,7 +107,7 @@ class Painel:
                 ("ajuda","Ajuda e controles",True),
             )
             for i,(codigo,texto,ativo) in enumerate(comandos):
-                botao(codigo,texto,280+i*44,ativo)
+                botao(codigo,texto,280+i*40,ativo)
 
         mensagem=s.aviso
         if interface.confirmacao:
@@ -97,7 +121,7 @@ class Painel:
         elif not mensagem and not s.lado and interface.em_xeque:
             mensagem="Xeque. Proteja seu rei."
         if interface.ajuda:
-            mensagem="Clique para jogar. Arraste a alça para virar. Botão direito orbita. Roda ajusta zoom. V vira. H fecha ajuda."
+            mensagem="Clique joga. Alça vira. Botão direito orbita. Roda dá zoom. M troca o mapa. Passe o mouse na aba para abrir o menu."
         for i,linha in enumerate(textwrap.wrap(mensagem or "Dois jogos. Uma mesa. Seu tempo.",29)):
             d.text((24,687+i*17),linha,font=fonte(12),fill=ouro)
         d.text((24,775),interface.metricas,font=fonte(11),fill=suave)
@@ -105,10 +129,10 @@ class Painel:
         return imagem
 
     def clicar(self,x,y,largura,altura):
-        cena,painel=dimensoes(largura)
-        if x<cena:
+        esquerda,painel=self.limites(largura)
+        if x<esquerda or x>largura:
             return None
-        px=(x-cena)*276/painel
+        px=(x-esquerda)*276/painel
         py=y*800/altura
         for (a,b,c,d),codigo in self.botoes:
             if a<=px<=c and b<=py<=d:

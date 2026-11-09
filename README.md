@@ -1,7 +1,7 @@
 # Praça dos Dois Jogos
 
 Xadrez e damas brasileiras para duas pessoas no mesmo computador.
-Um tabuleiro reversível sobre uma mesa de pedra, em uma praça ao pôr do sol.
+Um tabuleiro reversível sobre uma mesa de pedra, com mapas diurno e noturno.
 
 ## Executar
 
@@ -32,6 +32,23 @@ Cada face guarda posição, turno, resultado, histórico, contadores e oferta
 de empate enquanto o programa estiver aberto. Nova partida reinicia
 somente o jogo visível, após confirmação.
 
+## Menu e mapas
+
+O menu se recolhe após um segundo sem o mouse sobre ele. Passe o mouse na
+aba vertical MENU, na borda direita, para abri-lo. Promoção, ajuda e
+confirmações mantêm o menu aberto. O painel desliza sobre a cena, mantendo
+o enquadramento e a seleção das casas estáveis durante a abertura.
+
+O mapa inicial é a Praça diurna. O botão Mapa ou a tecla M alterna para a
+Praça noturna, com lua, estrelas, postes e lanternas acesos. Os dois mapas
+usam a mesma disposição da praça. As posições do sol, lua, estrelas e
+luzes estão definidas em coordenadas do mundo em `graficos/mapas.py`.
+A órbita da câmera permite olhar para o céu e observar os astros.
+
+Os bancos usam uma grade subdividida, arredondamento BEVEL e curvatura
+BEND adaptados da aula 24. As normais são recalculadas após as deformações.
+Essas malhas são preparadas na inicialização e reutilizadas pela GPU.
+
 ## Controles
 
 | Comando | Ação |
@@ -44,6 +61,7 @@ somente o jogo visível, após confirmação.
 | Home | Restaura a câmera para o jogador da vez |
 | G | Liga ou desliga o giro automático por turno |
 | Q | Alterna qualidade normal e leve |
+| M | Alterna entre os mapas diurno e noturno |
 | D, T, B, C | Escolhe a promoção no xadrez |
 | E | Oferece ou aceita empate |
 | R | Reivindica empate no xadrez, na posição atual ou com o próximo lance indicado |
@@ -71,6 +89,8 @@ turno, resultado, ofertas, avisos e contagem de peças capturadas.
 | `damas/` | Regras e estado das damas brasileiras |
 | `graficos/camera.py` | Órbita, zoom, projeção e raio de seleção |
 | `graficos/malhas.py` | Primitivas e transformações de malhas |
+| `graficos/modificadores.py` | BEVEL e BEND da aula 24 aplicados aos bancos |
+| `graficos/mapas.py` | Cores dos ambientes, astros e luzes em coordenadas 3D |
 | `graficos/renderizador.py` | Shaders, texturas e buffers na GPU |
 | `graficos/cena.py` | Composição da cena e recursos compartilhados |
 | `graficos/tabuleiro.py` | Duas faces, alças, casas e coordenadas |
@@ -117,14 +137,17 @@ e [texto de competição autorizado pela confederação, artigos 97–104](https
 python -B test_xadrez.py
 python -B test_damas.py
 python -B test_interface.py
+python -B test_ambientes.py
 ```
 
 Os dois primeiros testes verificam regras e sessão. O terceiro abre uma
 janela oculta e exercita os callbacks de mouse/teclado, projeção das 64 casas,
 redimensionamento, mate, uma partida completa de damas, painel, reinício,
 arraste das alças e promoção.
+O quarto verifica o menu retrátil, estabilidade da projeção, troca de
+mapas, posição mundial do sol e modificadores da aula 24.
 
-Para reproduzir as medições e gerar imagens das duas faces e da virada:
+Para reproduzir as medições e gerar imagens das faces, virada, menu e mapas:
 
 ```powershell
 python -B verificar_visual.py

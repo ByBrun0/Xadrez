@@ -21,6 +21,7 @@ class Interface:
         self.ajuda=False
         self.giro_automatico=True
         self.qualidade="normal"
+        self.mapa="dia"
         self.metricas=""
         self.cursor=glfw.get_cursor_pos(janela)
         self.inicio_arraste=None
@@ -44,6 +45,9 @@ class Interface:
         return self._xeque
 
     def atualizar(self,dt):
+        largura, altura = glfw.get_window_size(self.janela)
+        self.painel.atualizar(dt, self.cursor, largura, altura,
+                              bool(self.sessao.promocao or self.confirmacao or self.ajuda))
         virando=self.sessao.virada is not None
         if self.sessao.atualizar(dt) and self.giro_automatico:
             self.camera.girar_turno()
@@ -134,6 +138,8 @@ class Interface:
             self.giro_automatico=not self.giro_automatico
         elif codigo=="qualidade":
             self.qualidade="leve" if self.qualidade=="normal" else "normal"
+        elif codigo=="mapa":
+            self.mapa="noite" if self.mapa=="dia" else "dia"
         elif not s.passos:
             if codigo=="virar":
                 self.virar()
@@ -179,6 +185,7 @@ class Interface:
             return
         comandos={glfw.KEY_V:"virar",glfw.KEY_N:"novo",glfw.KEY_E:"empate",
                   glfw.KEY_X:"abandono",glfw.KEY_R:"reivindicar",glfw.KEY_H:"ajuda",
-                  glfw.KEY_HOME:"camera",glfw.KEY_G:"giro",glfw.KEY_Q:"qualidade"}
+                  glfw.KEY_HOME:"camera",glfw.KEY_G:"giro",glfw.KEY_Q:"qualidade",
+                  glfw.KEY_M:"mapa"}
         if tecla in comandos:
             self.comando(comandos[tecla])

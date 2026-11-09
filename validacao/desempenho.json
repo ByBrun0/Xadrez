@@ -4,18 +4,19 @@
     1100,
     800
   ],
+  "mapa": "dia",
   "referencia_anterior_ms": 77.57,
   "testes": {
     "normal": {
-      "media_ms": 22.26,
-      "fps": 44.9
+      "media_ms": 19.19,
+      "fps": 52.1
     },
     "leve": {
-      "media_ms": 10.42,
-      "fps": 96.0
+      "media_ms": 16.93,
+      "fps": 59.1
     },
-    "captura_ms": 9.68,
-    "virada_ms": 17.29
+    "captura_ms": 15.84,
+    "virada_ms": 8.15
   },
   "observacao": "Medição local sem limite de FPS. A conferência manual da janela ficou pendente."
 }

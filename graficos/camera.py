@@ -35,7 +35,7 @@ class Camera:
     def orbitar(self,dx,dy):
         if not self.restante:
             self.angulo+=dx*0.007
-            self.alvo_inclinacao=max(0.35,min(1.44,self.alvo_inclinacao+dy*0.007))
+            self.alvo_inclinacao=max(0.18,min(1.44,self.alvo_inclinacao+dy*0.007))
 
     def zoom(self,passos):
         self.alvo_distancia=max(11,min(31,self.alvo_distancia-passos))

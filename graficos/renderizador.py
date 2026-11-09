@@ -17,8 +17,11 @@ uniform mat4 projecao;
 out vec3 normalMundo;
 out vec2 coordenada;
 out vec3 corMalha;
+out vec3 posicaoMundo;
 void main() {
-    gl_Position = projecao * vista * modelo * vec4(posicao, 1.0);
+    vec4 mundo = modelo * vec4(posicao, 1.0);
+    gl_Position = projecao * vista * mundo;
+    posicaoMundo = mundo.xyz;
     normalMundo = mat3(modelo) * normal;
     coordenada = uv;
     corMalha = corVertice;
@@ -29,19 +32,35 @@ FRAGMENT = """
 in vec3 normalMundo;
 in vec2 coordenada;
 in vec3 corMalha;
+in vec3 posicaoMundo;
 uniform vec3 cor;
 uniform sampler2D imagem;
 uniform int texturizado;
 uniform int iluminado;
+uniform vec3 ambiente;
+uniform vec3 corLuz;
+uniform vec3 direcaoLuz;
+uniform vec3 postes[4];
+uniform int noite;
 out vec4 fragmento;
 void main() {
     vec4 base = vec4(cor * corMalha, 1.0);
     if (texturizado == 1) base *= texture(imagem, coordenada);
     if (iluminado == 1) {
         vec3 n = normalize(normalMundo);
-        float luz = max(dot(n, normalize(vec3(-0.6, 0.9, -0.5))), 0.0);
+        float luz = max(dot(n, normalize(direcaoLuz)), 0.0);
         float apoio = max(dot(n, normalize(vec3(0.7, 0.3, 0.8))), 0.0);
-        base.rgb *= vec3(0.55, 0.52, 0.50) + luz * vec3(0.51, 0.39, 0.27) + apoio * 0.12;
+        vec3 luzTotal = ambiente + luz * corLuz + apoio * 0.08;
+        if (noite == 1) {
+            for (int i = 0; i < 4; i++) {
+                vec3 vetor = postes[i] - posicaoMundo;
+                float distancia = length(vetor);
+                float difusa = max(dot(n, normalize(vetor)), 0.0);
+                luzTotal += vec3(1.0, 0.70, 0.32) * difusa * 1.5 /
+                            (1.0 + 0.18 * distancia * distancia);
+            }
+        }
+        base.rgb *= luzTotal;
     }
     fragmento = base;
 }
@@ -53,7 +72,8 @@ class Renderizador:
         self.programa = compileProgram(compileShader(VERTEX, GL_VERTEX_SHADER),
                                       compileShader(FRAGMENT, GL_FRAGMENT_SHADER))
         self.uniformes = {nome: glGetUniformLocation(self.programa, nome) for nome in
-                          ("modelo", "vista", "projecao", "cor", "imagem", "texturizado", "iluminado")}
+                          ("modelo", "vista", "projecao", "cor", "imagem", "texturizado", "iluminado",
+                           "ambiente", "corLuz", "direcaoLuz", "postes[0]", "noite")}
         self.recursos = []
         self.texturas = []
 
@@ -100,6 +120,15 @@ class Renderizador:
         glUniformMatrix4fv(self.uniformes["projecao"], 1, GL_TRUE, np.asarray(projecao, dtype=np.float32))
         glUniformMatrix4fv(self.uniformes["vista"], 1, GL_TRUE, np.asarray(vista, dtype=np.float32))
         glUniform1i(self.uniformes["imagem"], 0)
+
+    def configurar_mapa(self, mapa):
+        from .mapas import LUZES_POSTES
+        glUniform3f(self.uniformes["ambiente"], *mapa.ambiente)
+        glUniform3f(self.uniformes["corLuz"], *mapa.luz)
+        glUniform3f(self.uniformes["direcaoLuz"], *mapa.astro)
+        glUniform3fv(self.uniformes["postes[0]"], 4,
+                     np.asarray(LUZES_POSTES, dtype=np.float32))
+        glUniform1i(self.uniformes["noite"], mapa.noite)
 
     def desenhar(self, malha, modelo=None, cor=(1,1,1), textura=0, luz=True):
         modelo = np.eye(4) if modelo is None else modelo

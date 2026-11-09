@@ -31,7 +31,35 @@ def executar():
         glfw.swap_interval(0)
         cena=Cena()
         ui=Interface(janela,Camera())
-        resultados={"gpu":glGetString(GL_RENDERER).decode(),"resolucao":[1100,800],
+        ui.cursor = (10, 100)
+        for _ in range(80):
+            ui.atualizar(.02)
+        for mapa in ("dia", "noite"):
+            ui.mapa = mapa
+            cena.desenhar(1100,800,ui,0)
+            salvar_imagem(pasta/(mapa+".png"))
+        inclinacao = ui.camera.inclinacao
+        distancia = ui.camera.distancia
+        ui.camera.inclinacao = ui.camera.alvo_inclinacao = 0.18
+        ui.camera.distancia = ui.camera.alvo_distancia = 28
+        for mapa, arquivo in (("dia", "sol_mundo.png"), ("noite", "ceu_noturno.png")):
+            ui.mapa = mapa
+            cena.desenhar(1100,800,ui,0)
+            salvar_imagem(pasta/arquivo)
+        ui.camera.inclinacao = ui.camera.alvo_inclinacao = inclinacao
+        ui.camera.distancia = ui.camera.alvo_distancia = distancia
+        ui.mapa = "dia"
+        ui.cursor = (1098, 400)
+        for _ in range(20):
+            ui.atualizar(.02)
+        cena.desenhar(1100,800,ui,0)
+        salvar_imagem(pasta/"menu_aberto.png")
+        ui.cursor = (10, 100)
+        for _ in range(80):
+            ui.atualizar(.02)
+        cena.desenhar(1100,800,ui,0)
+        salvar_imagem(pasta/"menu_retraido.png")
+        resultados={"gpu":glGetString(GL_RENDERER).decode(),"resolucao":[1100,800],"mapa":"dia",
                     "referencia_anterior_ms":77.57,"testes":{}}
         for qualidade in ("normal","leve"):
             ui.qualidade=qualidade

@@ -80,8 +80,12 @@ def testar():
         # Botão do painel passa para damas e preserva o mate do xadrez.
         ui.painel.gerar(ui)
         largura,altura=glfw.get_window_size(janela)
-        cena_x,painel=dimensoes(largura)
-        clicar(ui,cena_x+painel/2,298*altura/800)
+        esquerda,painel=ui.painel.limites(largura)
+        ui.cursor=(largura-5,altura/2)
+        for _ in range(20):
+            ui.atualizar(.02)
+        esquerda,painel=ui.painel.limites(largura)
+        clicar(ui,esquerda+painel/2,298*altura/800)
         assert ui.sessao.virada
         avancar(ui)
         assert ui.sessao.lado==1

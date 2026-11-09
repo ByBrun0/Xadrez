@@ -7,7 +7,8 @@ from OpenGL.GL import *
 
 from configuracao import PLANO, CENTRO_TABULEIRO, CORES_PECAS, BRONZE, QUALIDADES
 from . import cenario, pecas, pecas_damas, tabuleiro
-from .malhas import Malha, revolucao, translacao, rotacao, escala
+from .malhas import Malha, revolucao, esfera, translacao, rotacao, escala
+from .mapas import MAPAS, estrelas
 from .renderizador import Renderizador
 from .painel import dimensoes
 
@@ -30,7 +31,9 @@ class Cena:
         self.quad=Malha()
         self.quad.quad(((0,0,0),(1,0,0),(1,1,0),(0,1,0)),(0,0,1))
         self.quad=self.gpu.malha(self.quad)
-        self.ceu=self.gpu.textura(cenario.ceu(),False)
+        self.ceus={nome:self.gpu.textura(cenario.ceu(nome),False) for nome in MAPAS}
+        self.astro=self.gpu.malha(esfera(1,32))
+        self.estrelas=self.gpu.malha(estrelas())
         self.painel=self.gpu.textura(Image.new("RGB",(276,800)),False)
         self.definir_qualidade("normal")
         self.definir_qualidade("leve")
@@ -86,12 +89,23 @@ class Cena:
         glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
         glDisable(GL_DEPTH_TEST)
         self.gpu.iniciar(np.eye(4),np.eye(4))
-        self.gpu.desenhar(self.quad,translacao(-1,-1,0)@escala(2,2,1),textura=self.ceu,luz=False)
+        mapa = MAPAS[interface.mapa]
+        self.gpu.desenhar(self.quad,translacao(-1,-1,0)@escala(2,2,1),
+                         textura=self.ceus[interface.mapa],luz=False)
         glEnable(GL_DEPTH_TEST)
         glViewport(0,0,cena_x,altura)
         self.gpu.iniciar(*camera.matrizes(cena_x/altura,PLANO))
+        self.gpu.configurar_mapa(mapa)
+        self.gpu.desenhar(self.astro, translacao(*mapa.astro)@escala(mapa.raio_astro),
+                         mapa.cor_astro, luz=False)
+        if mapa.noite:
+            self.gpu.desenhar(self.estrelas, cor=(0.80,0.87,1.0), luz=False)
         for nome,malha in self.grupos[self.qualidade].items():
-            self.gpu.desenhar(malha,textura=self.imagens.get(nome,0))
+            cor = (1,1,1)
+            if nome=="lampadas" and not mapa.noite:
+                cor = (0.54,0.61,0.70)
+            self.gpu.desenhar(malha,cor=cor,textura=self.imagens.get(nome,0),
+                             luz=nome!="lampadas")
         virada=s.virada
         angulo=s.lado*180
         altura_tab=0
@@ -138,7 +152,8 @@ class Cena:
         imagem=interface.painel.gerar(interface)
         if imagem:
             self.gpu.atualizar_textura(self.painel,imagem)
-        glViewport(cena_x,0,largura-cena_x,altura)
+        esquerda, painel = interface.painel.limites(janela_x)
+        glViewport(round(esquerda*largura/janela_x),0,round(painel*largura/janela_x),altura)
         glDisable(GL_DEPTH_TEST)
         self.gpu.iniciar(np.eye(4),np.eye(4))
         self.gpu.desenhar(self.quad,translacao(-1,-1,0)@escala(2,2,1),textura=self.painel,luz=False)

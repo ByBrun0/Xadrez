@@ -6,6 +6,8 @@ from PIL import Image, ImageDraw
 
 from configuracao import TOPO_MESA, BRONZE
 from .malhas import Malha, caixa, chanfrada, revolucao, esfera, translacao, escala
+from .modificadores import banco_curvo
+from .mapas import MAPAS
 
 
 def carregar_imagens():
@@ -18,7 +20,7 @@ def carregar_imagens():
 
 
 def criar(leve=False):
-    lisos, pedra, madeira = Malha(), Malha(), Malha()
+    lisos, pedra, madeira, lampadas = Malha(), Malha(), Malha(), Malha()
 
     def bloco(destino,x,y,z,l,a,p,cor,chanfro=False):
         forma = chanfrada(l,a,p) if chanfro else caixa(l,a,p)
@@ -40,7 +42,14 @@ def criar(leve=False):
         for x in (-3.1,3.1):
             bloco(pedra,x,0.61,z,0.8,1.22,1.20,(0.86,0.83,0.74),True)
         for deslocamento in (-0.48,0,0.48):
-            bloco(madeira,0,1.565,z+deslocamento,8.45,0.07,0.42,(0.74,0.53,0.31),True)
+            madeira.juntar(banco_curvo(8.45,0.12,0.42,leve),
+                           translacao(0,1.565,z+deslocamento),(0.74,0.53,0.31))
+        direcao = 1 if z > 0 else -1
+        for x in (-3.1,3.1):
+            bloco(lisos,x,1.96,z+direcao*0.86,0.13,1.10,0.13,BRONZE)
+        for y in (2.02,2.36):
+            madeira.juntar(banco_curvo(8.45,0.27,0.12,leve),
+                           translacao(0,y,z+direcao*0.86),(0.74,0.53,0.31))
 
     # Bacias laterais por onde as peças entram e saem.
     perfil = ((0.69,0),(0.80,0.07),(0.83,0.18),(0.80,0.26),
@@ -69,20 +78,24 @@ def criar(leve=False):
     for x,z in ((-10,3),(10,-3)):
         lisos.juntar(revolucao(((0.32,0),(0.32,0.16),(0.12,0.25),(0.095,5.4),(0,5.4)),20),
                      translacao(x,0,z),(0.19,0.20,0.17))
-        bloco(lisos,x,5.52,z,0.52,0.8,0.52,(0.95,0.77,0.42),True)
+        bloco(lampadas,x,5.52,z,0.52,0.8,0.52,(1.0,0.79,0.40),True)
         bloco(lisos,x,6.0,z,0.75,0.16,0.75,(0.22,0.24,0.19),True)
+    for x in (-5.8,5.8):
+        bloco(lisos,x,3.12,3.2,0.48,0.24,0.48,BRONZE,True)
+        bloco(lampadas,x,3.65,3.2,0.29,0.76,0.29,(1.0,0.80,0.43),True)
+        bloco(lisos,x,4.08,3.2,0.49,0.12,0.49,BRONZE,True)
     for vertice in pedra.vertices:
         vertice[6] *= 2
         vertice[7] *= 2
-    return {"liso":lisos,"pedra":pedra,"madeira":madeira}
+    return {"liso":lisos,"pedra":pedra,"madeira":madeira,"lampadas":lampadas}
 
 
-def ceu():
+def ceu(mapa="dia"):
+    ambiente = MAPAS[mapa]
     imagem = Image.new("RGB",(1024,512))
     desenho=ImageDraw.Draw(imagem)
     for y in range(512):
         t=y/511
-        cor=tuple(round(a+(b-a)*t) for a,b in zip((174,140,145),(241,187,135)))
+        cor=tuple(round(a+(b-a)*t) for a,b in zip(ambiente.ceu_superior,ambiente.ceu_inferior))
         desenho.line((0,y,1024,y),fill=cor)
-    desenho.ellipse((730,5,810,45),fill=(252,218,160))
     return imagem
