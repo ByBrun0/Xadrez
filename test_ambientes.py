@@ -62,8 +62,8 @@ def testar():
         assert np.allclose(tela_fechado, ponto_tela(ui, 1.5, -2.5))
         ui.painel.gerar(ui)
         esquerda, largura = ui.painel.limites(1100)
-        # Mapa é o quinto botão. O clique usa a mesma transformação do desenho.
-        codigo = ui.painel.clicar(esquerda + largura / 2, 458, 1100, 800)
+        ret=next(ret for ret,codigo in ui.painel.botoes if codigo=="mapa")
+        codigo = ui.painel.clicar(esquerda + largura / 2, (ret[1]+ret[3])/2, 1100, 800)
         assert codigo == "mapa"
         ui.comando(codigo)
         assert ui.mapa == "noite"

@@ -16,6 +16,7 @@ class Camera:
         self.tempo_giro=0
         self.inicio_giro=self.angulo
         self.abertura=0
+        self.foco=np.zeros(3)
 
     def girar_turno(self):
         self.restante=math.pi
@@ -41,21 +42,23 @@ class Camera:
         self.alvo_distancia=max(11,min(31,self.alvo_distancia-passos))
 
     def restaurar(self,turno=1):
+        self.foco=np.zeros(3)
         self.angulo=(math.pi if turno==1 else 0)+0.23
         self.restante=0
         self.alvo_inclinacao=0.78
         self.alvo_distancia=19.3
 
     def guardar(self):
-        return self.angulo,self.alvo_inclinacao,self.alvo_distancia
+        return self.angulo,self.alvo_inclinacao,self.alvo_distancia,tuple(self.foco)
 
     def recuperar(self,estado):
-        self.angulo,self.alvo_inclinacao,self.alvo_distancia=estado
+        self.angulo,self.alvo_inclinacao,self.alvo_distancia=estado[:3]
+        self.foco=np.array(estado[3] if len(estado)>3 else (0,0,0),dtype=float)
         self.restante=0
 
     def matrizes(self,aspecto,altura):
         distancia=self.distancia+6*self.abertura
-        alvo=np.array([0,altura+2.5*self.abertura,0])
+        alvo=np.array([0,altura+2.5*self.abertura,0])+self.foco
         raio=distancia*math.cos(self.inclinacao)
         olho=alvo+[raio*math.sin(self.angulo),distancia*math.sin(self.inclinacao),
                    raio*math.cos(self.angulo)]

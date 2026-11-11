@@ -32,7 +32,7 @@ LUZES_POSTES = ((-10, 5.52, 3), (10, 5.52, -3),
                 (-5.8, 3.9, 3.2), (5.8, 3.9, 3.2))
 
 
-def estrelas():
+def estrelas(quantidade=220):
     """Pontos pequenos sobre uma semiesfera fixa em torno da praça."""
     import math
     from random import Random
@@ -45,7 +45,7 @@ def estrelas():
         for sinal_y in (-1, 1):
             for sinal_z in (-1, 1):
                 estrela.triangulo(((sinal_x, 0, 0), (0, sinal_y, 0), (0, 0, sinal_z)))
-    for _ in range(220):
+    for _ in range(quantidade):
         angulo = gerador.uniform(0, math.tau)
         elevacao = gerador.uniform(0.02, 1.4)
         raio = 66 * math.cos(elevacao)

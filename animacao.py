@@ -27,6 +27,7 @@ class Jogada:
         self.lance = lance
         self.damas = damas
         self.tempo = 0
+        self.inicio_visual = None
         self.pousos = lance.pousos if damas else (lance.destino,)
         self.capturadas = list(lance.capturadas) if damas else []
         peca = anterior[lance.origem]
@@ -64,6 +65,10 @@ class Jogada:
         destino=self.pousos[indice]
         salto=0.65 if self.damas or peca.upper()=="C" else 0.10
         x,y,z=caminho(centro(anterior),centro(destino),t,salto)
+        if self.inicio_visual is not None and indice == self.inicio_pousos:
+            inicio_x, inicio_y, inicio_z = self.inicio_visual
+            x, y, z = caminho((inicio_x, inicio_z), centro(destino), t, 0.06)
+            y += inicio_y * (1 - suave(t))
         fim_movimento=DURACAO_PASSO*passos
         if self.tempo>=fim_movimento:
             x,z=centro(self.lance.destino)

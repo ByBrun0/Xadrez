@@ -42,9 +42,10 @@ class Painel:
         s=interface.sessao
         p=s.partida
         chave=(s.lado,p.posicao,p.resultado,p.oferta,s.aviso,bool(s.virada),
-               bool(s.animacao),s.passos,tuple(s.promocao),s.reivindicacao,
+               bool(s.animacao),bool(interface.arraste),s.passos,tuple(s.promocao),s.reivindicacao,
                interface.confirmacao,interface.ajuda,interface.giro_automatico,
-               interface.qualidade,interface.metricas,bool(interface.camera.restante),interface.mapa)
+               interface.qualidade,interface.metricas,bool(interface.camera.restante),interface.mapa,
+               interface.apresentacao.modo)
         if chave==self.chave:
             return None
         self.chave=chave
@@ -75,15 +76,16 @@ class Painel:
         self.botoes=[]
 
         def botao(codigo,texto,y,ativo=True,x=24,largura=228):
-            ret=(x,y,x+largura,y+36)
+            ret=(x,y,x+largura,y+32)
             d.rounded_rectangle(ret,8,fill=(51,67,55) if ativo else (37,47,41),
                                 outline=(98,116,84) if ativo else (52,65,54))
             d.text((x+12,y+9),texto,font=fonte(14),fill=creme if ativo else (100,113,101))
             if ativo:
                 self.botoes.append((ret,codigo))
 
-        ocupado=s.bloqueada or bool(interface.camera.restante)
-        livre=not ocupado and not s.passos and not s.promocao and not interface.confirmacao
+        ocupado=interface.ocupada or bool(interface.camera.restante)
+        livre=(not ocupado and not s.passos and not s.promocao and not interface.confirmacao
+               and interface.apresentacao.permite_jogar)
         if s.promocao:
             d.text((24,286),"Escolha a promoção",font=fonte(17),fill=ouro)
             for i,(codigo,nome,simbolo) in enumerate((("D","Dama","♕"),("T","Torre","♖"),
@@ -99,6 +101,8 @@ class Painel:
                 ("giro","Giro por turno   "+("ligado" if interface.giro_automatico else "desligado"),not ocupado),
                 ("qualidade","Qualidade   "+interface.qualidade,not ocupado),
                 ("mapa","Mapa   "+("Dia" if interface.mapa=="dia" else "Noite"),not ocupado),
+                ("contemplar","Voltar ao jogo" if interface.apresentacao.modo=="contemplacao"
+                 else "Contemplar a praça",not ocupado and not s.passos and not s.promocao),
                 ("novo","Nova partida",livre),
                 ("empate","Aceitar empate" if p.oferta==-p.posicao.turno else "Oferecer empate",
                  livre and not p.resultado),
@@ -107,7 +111,7 @@ class Painel:
                 ("ajuda","Ajuda e controles",True),
             )
             for i,(codigo,texto,ativo) in enumerate(comandos):
-                botao(codigo,texto,280+i*40,ativo)
+                botao(codigo,texto,280+i*35,ativo)
 
         mensagem=s.aviso
         if interface.confirmacao:
@@ -121,7 +125,7 @@ class Painel:
         elif not mensagem and not s.lado and interface.em_xeque:
             mensagem="Xeque. Proteja seu rei."
         if interface.ajuda:
-            mensagem="Clique joga. Alça vira. Botão direito orbita. Roda dá zoom. M troca o mapa. Passe o mouse na aba para abrir o menu."
+            mensagem="Clique ou arraste para jogar. V vira. C contempla. M troca mapa. Q troca qualidade. Passe o mouse na aba para abrir o menu."
         for i,linha in enumerate(textwrap.wrap(mensagem or "Dois jogos. Uma mesa. Seu tempo.",29)):
             d.text((24,687+i*17),linha,font=fonte(12),fill=ouro)
         d.text((24,775),interface.metricas,font=fonte(11),fill=suave)

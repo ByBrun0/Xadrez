@@ -14,15 +14,25 @@ layout(location=3) in vec3 corVertice;
 uniform mat4 modelo;
 uniform mat4 vista;
 uniform mat4 projecao;
+uniform float vento;
 out vec3 normalMundo;
 out vec2 coordenada;
 out vec3 corMalha;
 out vec3 posicaoMundo;
 void main() {
     vec4 mundo = modelo * vec4(posicao, 1.0);
+    vec3 n = mat3(modelo) * normal;
+    if (abs(vento) > 0.00001) {
+        // BEND da aula 24, adaptado ao eixo vertical Y das árvores.
+        float h = max(mundo.y - 3.5, 0.0);
+        float angulo = vento * h;
+        mundo.x += (1.0 - cos(angulo)) / vento;
+        mundo.y += sin(angulo) / vento - h;
+        n.xy = mat2(cos(angulo), -sin(angulo), sin(angulo), cos(angulo)) * n.xy;
+    }
     gl_Position = projecao * vista * mundo;
     posicaoMundo = mundo.xyz;
-    normalMundo = mat3(modelo) * normal;
+    normalMundo = n;
     coordenada = uv;
     corMalha = corVertice;
 }
@@ -42,6 +52,8 @@ uniform vec3 corLuz;
 uniform vec3 direcaoLuz;
 uniform vec3 postes[4];
 uniform int noite;
+uniform int quantidadePostes;
+uniform float pulsacao;
 out vec4 fragmento;
 void main() {
     vec4 base = vec4(cor * corMalha, 1.0);
@@ -52,11 +64,11 @@ void main() {
         float apoio = max(dot(n, normalize(vec3(0.7, 0.3, 0.8))), 0.0);
         vec3 luzTotal = ambiente + luz * corLuz + apoio * 0.08;
         if (noite == 1) {
-            for (int i = 0; i < 4; i++) {
+            for (int i = 0; i < quantidadePostes; i++) {
                 vec3 vetor = postes[i] - posicaoMundo;
                 float distancia = length(vetor);
                 float difusa = max(dot(n, normalize(vetor)), 0.0);
-                luzTotal += vec3(1.0, 0.70, 0.32) * difusa * 1.5 /
+                luzTotal += vec3(1.0, 0.70, 0.32) * difusa * 1.5 * pulsacao /
                             (1.0 + 0.18 * distancia * distancia);
             }
         }
@@ -73,7 +85,8 @@ class Renderizador:
                                       compileShader(FRAGMENT, GL_FRAGMENT_SHADER))
         self.uniformes = {nome: glGetUniformLocation(self.programa, nome) for nome in
                           ("modelo", "vista", "projecao", "cor", "imagem", "texturizado", "iluminado",
-                           "ambiente", "corLuz", "direcaoLuz", "postes[0]", "noite")}
+                           "ambiente", "corLuz", "direcaoLuz", "postes[0]", "noite",
+                           "quantidadePostes", "pulsacao", "vento")}
         self.recursos = []
         self.texturas = []
 
@@ -121,21 +134,25 @@ class Renderizador:
         glUniformMatrix4fv(self.uniformes["vista"], 1, GL_TRUE, np.asarray(vista, dtype=np.float32))
         glUniform1i(self.uniformes["imagem"], 0)
 
-    def configurar_mapa(self, mapa):
+    def configurar_mapa(self, mapa, qualidade, pulsacao=1):
         from .mapas import LUZES_POSTES
         glUniform3f(self.uniformes["ambiente"], *mapa.ambiente)
         glUniform3f(self.uniformes["corLuz"], *mapa.luz)
         glUniform3f(self.uniformes["direcaoLuz"], *mapa.astro)
-        glUniform3fv(self.uniformes["postes[0]"], 4,
-                     np.asarray(LUZES_POSTES, dtype=np.float32))
+        # Lanternas da mesa primeiro, preservando a leitura na qualidade baixa.
+        postes = LUZES_POSTES[2:] + LUZES_POSTES[:2]
+        glUniform3fv(self.uniformes["postes[0]"], 4, np.asarray(postes, dtype=np.float32))
         glUniform1i(self.uniformes["noite"], mapa.noite)
+        glUniform1i(self.uniformes["quantidadePostes"], qualidade.luzes_locais)
+        glUniform1f(self.uniformes["pulsacao"], pulsacao)
 
-    def desenhar(self, malha, modelo=None, cor=(1,1,1), textura=0, luz=True):
+    def desenhar(self, malha, modelo=None, cor=(1,1,1), textura=0, luz=True, vento=0):
         modelo = np.eye(4) if modelo is None else modelo
         glUniformMatrix4fv(self.uniformes["modelo"], 1, GL_TRUE, np.asarray(modelo, dtype=np.float32))
         glUniform3f(self.uniformes["cor"], *cor)
         glUniform1i(self.uniformes["texturizado"], bool(textura))
         glUniform1i(self.uniformes["iluminado"], luz)
+        glUniform1f(self.uniformes["vento"], vento)
         glActiveTexture(GL_TEXTURE0)
         glBindTexture(GL_TEXTURE_2D, textura)
         glBindVertexArray(malha[0])

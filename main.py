@@ -31,7 +31,7 @@ def main():
     try:
         glfw.swap_interval(1)
         cena=Cena()
-        interface=Interface(janela,Camera())
+        interface=Interface(janela,Camera(),apresentar=True)
         anterior=perf_counter()
         inicio_medicao=anterior
         soma=quadros=0

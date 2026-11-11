@@ -8,15 +8,23 @@
   "referencia_anterior_ms": 77.57,
   "testes": {
     "normal": {
-      "media_ms": 19.19,
-      "fps": 52.1
+      "media_ms": 18.36,
+      "fps": 54.5
     },
-    "leve": {
-      "media_ms": 16.93,
-      "fps": 59.1
+    "baixa": {
+      "media_ms": 13.11,
+      "fps": 76.3
     },
-    "captura_ms": 15.84,
-    "virada_ms": 8.15
+    "captura_ms": 15.88,
+    "virada_ms": 8.24,
+    "noite_normal": {
+      "media_ms": 18.1,
+      "fps": 55.2
+    },
+    "noite_baixa": {
+      "media_ms": 11.91,
+      "fps": 84.0
+    }
   },
   "observacao": "Medição local sem limite de FPS. A conferência manual da janela ficou pendente."
 }

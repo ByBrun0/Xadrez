@@ -103,6 +103,26 @@ def esfera(raio, segmentos=24):
     return revolucao(perfil, segmentos)
 
 
+def superficie_parametrica(funcao, amostras_u, amostras_v):
+    """Grade paramétrica da aula 22, com normais calculadas pelas tangentes."""
+    valores_u = np.linspace(0, 1, amostras_u + 1)
+    valores_v = np.linspace(0, 1, amostras_v + 1)
+    pontos = np.array([[funcao(u, v) for v in valores_v] for u in valores_u])
+    tangente_u, tangente_v = np.gradient(pontos, axis=(0, 1))
+    normais = np.cross(tangente_u, tangente_v)
+    tamanhos = np.linalg.norm(normais, axis=2, keepdims=True)
+    normais /= np.maximum(tamanhos, 1e-10)
+    normais[tamanhos[:, :, 0] < 1e-10] = (0, 1, 0)
+    malha = Malha()
+    for i in range(amostras_u):
+        for j in range(amostras_v):
+            indices = ((i,j), (i+1,j), (i+1,j+1), (i,j), (i+1,j+1), (i,j+1))
+            for a,b in indices:
+                malha.vertices.append((*pontos[a,b], *normais[a,b],
+                                       valores_v[b], valores_u[a], 1, 1, 1))
+    return malha
+
+
 def chanfrada(largura, altura, profundidade, chanfro=0.12):
     """Prisma com quatro quinas cortadas e borda superior inclinada."""
     x, z = largura / 2, profundidade / 2

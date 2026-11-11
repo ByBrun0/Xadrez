@@ -20,7 +20,7 @@ def carregar_imagens():
 
 
 def criar(leve=False):
-    lisos, pedra, madeira, lampadas = Malha(), Malha(), Malha(), Malha()
+    lisos, pedra, madeira, lampadas, copas = Malha(), Malha(), Malha(), Malha(), Malha()
 
     def bloco(destino,x,y,z,l,a,p,cor,chanfro=False):
         forma = chanfrada(l,a,p) if chanfro else caixa(l,a,p)
@@ -29,9 +29,10 @@ def criar(leve=False):
     # Terra e praça em degraus.
     bloco(lisos,0,-0.28,0,42,0.2,42,(0.37,0.41,0.28))
     bloco(lisos,0,-0.11,0,24,0.22,24,(0.57,0.53,0.43),True)
-    for x in range(-10,11,2):
-        for z in range(-10,11,2):
-            bloco(lisos,x,0.015,z,1.94,0.025,1.94,(0.67,0.61,0.50))
+    passo_piso = 4 if leve else 2
+    for x in range(-10,11,passo_piso):
+        for z in range(-10,11,passo_piso):
+            bloco(lisos,x,0.015,z,passo_piso-0.06,0.025,passo_piso-0.06,(0.67,0.61,0.50))
     # Tampo e suportes de pedra clara.
     bloco(pedra,0,2.72,0,12.9,0.56,10.0,(0.93,0.89,0.79),True)
     bloco(lisos,0,2.38,0,11.8,0.13,8.8,(0.47,0.43,0.35),True)
@@ -55,19 +56,19 @@ def criar(leve=False):
     perfil = ((0.69,0),(0.80,0.07),(0.83,0.18),(0.80,0.26),
               (0.72,0.27),(0.67,0.16),(0.56,0.05),(0,0.05))
     for x in (-5.55,5.55):
-        lisos.juntar(revolucao(perfil,32),translacao(x,3,0),BRONZE)
-        lisos.juntar(revolucao(((0,0),(0.57,0)),32),
+        lisos.juntar(revolucao(perfil,16 if leve else 32),translacao(x,3,0),BRONZE)
+        lisos.juntar(revolucao(((0,0),(0.57,0)),16 if leve else 32),
                      translacao(x,3.08,0),(0.065,0.045,0.03))
 
     # Jardins mantêm a mesa como foco.
     for x,z in ((-9,-9),(9,-9),(-9,9),(9,9)):
         bloco(pedra,x,0.27,z,3.8,0.55,3.8,(0.81,0.77,0.65),True)
         bloco(lisos,x,0.57,z,3.45,0.05,3.45,(0.25,0.31,0.15),True)
-        lisos.juntar(revolucao(((0.35,0),(0.27,2.9),(0.15,4.1),(0,4.1)),20),
+        lisos.juntar(revolucao(((0.35,0),(0.27,2.9),(0.15,4.1),(0,4.1)),12 if leve else 20),
                      translacao(x,0.6,z),(0.31,0.20,0.12))
-        copas = ((0,4.3,0,1.8),) if leve else ((0,4.3,0,1.8),(-0.8,4.7,0.4,1.45),(0.8,5.1,-0.3,1.5))
-        for dx,y,dz,raio in copas:
-            lisos.juntar(esfera(raio,16 if leve else 24),
+        volumes = ((0,4.3,0,1.8),) if leve else ((0,4.3,0,1.8),(-0.8,4.7,0.4,1.45),(0.8,5.1,-0.3,1.5))
+        for dx,y,dz,raio in volumes:
+            copas.juntar(esfera(raio,12 if leve else 24),
                          translacao(x+dx,y,z+dz) @ escala(1,0.85,1),
                          (0.39+dx*0.04,0.43+y*0.015,0.19))
         if not leve:
@@ -76,7 +77,7 @@ def criar(leve=False):
                 lisos.juntar(esfera(0.11,12),translacao(x+1.3*math.cos(angulo),0.68,z+1.3*math.sin(angulo)),
                              (0.77,0.40,0.20))
     for x,z in ((-10,3),(10,-3)):
-        lisos.juntar(revolucao(((0.32,0),(0.32,0.16),(0.12,0.25),(0.095,5.4),(0,5.4)),20),
+        lisos.juntar(revolucao(((0.32,0),(0.32,0.16),(0.12,0.25),(0.095,5.4),(0,5.4)),12 if leve else 20),
                      translacao(x,0,z),(0.19,0.20,0.17))
         bloco(lampadas,x,5.52,z,0.52,0.8,0.52,(1.0,0.79,0.40),True)
         bloco(lisos,x,6.0,z,0.75,0.16,0.75,(0.22,0.24,0.19),True)
@@ -87,7 +88,7 @@ def criar(leve=False):
     for vertice in pedra.vertices:
         vertice[6] *= 2
         vertice[7] *= 2
-    return {"liso":lisos,"pedra":pedra,"madeira":madeira,"lampadas":lampadas}
+    return {"liso":lisos,"pedra":pedra,"madeira":madeira,"lampadas":lampadas,"copas":copas}
 
 
 def ceu(mapa="dia"):

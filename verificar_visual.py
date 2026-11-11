@@ -61,7 +61,7 @@ def executar():
         salvar_imagem(pasta/"menu_retraido.png")
         resultados={"gpu":glGetString(GL_RENDERER).decode(),"resolucao":[1100,800],"mapa":"dia",
                     "referencia_anterior_ms":77.57,"testes":{}}
-        for qualidade in ("normal","leve"):
+        for qualidade in ("normal","baixa"):
             ui.qualidade=qualidade
             for _ in range(12):
                 ui.atualizar(.016)
@@ -114,18 +114,67 @@ def executar():
         from xadrez.partida import Partida as Xadrez
         from test_xadrez import posicao
         ui.sessao.lado=0
-        ui.sessao.partidas[0]=Xadrez(posicao({"a4":"T","b4":"C","c4":"B","d4":"D",
-                                             "e4":"R","f4":"P","h8":"r"}))
+        ui.sessao.partidas[0]=Xadrez(posicao({"a3":"T","b3":"C","c3":"B","d3":"D",
+                                             "e3":"R","f3":"P","a6":"t","b6":"c",
+                                             "c6":"b","d6":"d","e6":"r","f6":"p"}))
         ui.camera.alvo_distancia=ui.camera.distancia=13
         ui.camera.angulo=3.14
         cena.desenhar(1100,800,ui,0)
         salvar_imagem(pasta/"pecas.png")
+        # Arraste em andamento, sem confirmar a posição lógica.
+        from test_arraste import pressionar, mover_para
+        ui.sessao.partidas[0]=Xadrez()
+        ui.sessao.limpar()
+        ui.camera.restaurar()
+        for _ in range(70):
+            ui.atualizar(.02)
+        pressionar(ui,"e2")
+        mover_para(ui,"e4")
+        cena.desenhar(1100,800,ui,0)
+        salvar_imagem(pasta/"arraste.png")
+        ui.tecla(janela,glfw.KEY_ESCAPE,0,glfw.PRESS,0)
+        for _ in range(20):
+            ui.atualizar(.02)
         from damas.partida import Partida as Damas
         from test_damas import posicao as posicao_damas
+        ui.sessao.limpar()
         ui.sessao.lado=1
         ui.sessao.partidas[1]=Damas(posicao_damas({"c3":"P","e3":"D","b6":"p","f6":"d"}))
         cena.desenhar(1100,800,ui,0)
         salvar_imagem(pasta/"damas_coroadas.png")
+
+        # Exercita a entrada usada por main.py e os efeitos nos dois perfis.
+        ui=Interface(janela,Camera(),apresentar=True)
+        cena.desenhar(1100,800,ui,1)
+        salvar_imagem(pasta/"tela_inicial.png")
+        ui.comando_tela("escolher_noite")
+        ui.comando_tela("iniciar_damas")
+        for _ in range(120):
+            ui.atualizar(.02)
+        ui.comando("contemplar")
+        for _ in range(120):
+            ui.atualizar(.02)
+        for qualidade in ("normal","baixa"):
+            ui.qualidade=qualidade
+            cena.desenhar(1100,800,ui,4)
+            salvar_imagem(pasta/("contemplacao_"+qualidade+".png"))
+            inicio=perf_counter()
+            for quadro in range(90):
+                cena.desenhar(1100,800,ui,4+quadro/60)
+                glFinish()
+            media=(perf_counter()-inicio)*1000/90
+            resultados["testes"]["noite_"+qualidade]={"media_ms":round(media,2),
+                                                       "fps":round(1000/media,1)}
+        ui.comando("contemplar")
+        ui.sessao.lado=0
+        partida_resultado=Xadrez()
+        for origem,destino in (("f2","f3"),("e7","e5"),("g2","g4"),("d8","h4")):
+            partida_resultado.jogar(lance(origem,destino))
+        ui.sessao.partidas[0]=partida_resultado
+        for _ in range(60):
+            ui.atualizar(.02)
+        cena.desenhar(1100,800,ui,6)
+        salvar_imagem(pasta/"resultado.png")
         resultados["observacao"]="Medição local sem limite de FPS. A conferência manual da janela ficou pendente."
         (pasta/"desempenho.json").write_text(json.dumps(resultados,indent=2,ensure_ascii=False),encoding="utf-8")
         print(json.dumps(resultados,indent=2,ensure_ascii=False))

@@ -82,3 +82,10 @@ def banco_curvo(largura, altura, profundidade, leve=False):
     vertices *= (largura / 2, altura / 2, profundidade / 2)
     vertices = bend(vertices, 0.045)
     return malha_suave(vertices, faces)
+
+
+def bloco_arredondado(largura, altura, profundidade):
+    vertices, faces = cubo_subdividido(4)
+    vertices = bevel(vertices, 0.23)
+    vertices *= (largura / 2, altura / 2, profundidade / 2)
+    return malha_suave(vertices, faces)
